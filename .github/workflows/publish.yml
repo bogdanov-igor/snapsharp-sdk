@@ -1,0 +1,200 @@
+# SDK & Package Publishing
+#
+# Triggers on version tags — push the right tag to publish the right package:
+#
+#   git tag sdk/node/v1.0.0    && git push origin sdk/node/v1.0.0
+#   git tag sdk/python/v1.0.0  && git push origin sdk/python/v1.0.0
+#   git tag sdk/ruby/v1.0.0    && git push origin sdk/ruby/v1.0.0
+#   git tag sdk/php/v1.0.0     && git push origin sdk/php/v1.0.0
+#   git tag sdk/go/v1.0.0      && git push origin sdk/go/v1.0.0
+#   git tag mcp/v1.0.0         && git push origin mcp/v1.0.0
+#   git tag n8n/v1.0.0         && git push origin n8n/v1.0.0
+#
+# Required GitHub Secrets:
+#   NPM_TOKEN           — npm automation token (npmjs.com → Access Tokens → Automation)
+#   PYPI_API_TOKEN      — PyPI API token (pypi.org → Account Settings → API tokens)
+#   RUBYGEMS_API_KEY    — RubyGems API key (rubygems.org → Profile → Edit Profile → API keys)
+#   PACKAGIST_USERNAME  — Packagist username
+#   PACKAGIST_TOKEN     — Packagist API token (packagist.org → Profile → Show API Token)
+
+name: Publish SDK
+
+on:
+  push:
+    tags:
+      - 'sdk/node/v*'
+      - 'sdk/python/v*'
+      - 'sdk/ruby/v*'
+      - 'sdk/php/v*'
+      - 'sdk/go/v*'
+      - 'mcp/v*'
+      - 'n8n/v*'
+
+jobs:
+
+  # ── Node.js SDK → npm ────────────────────────────────────────────────────────
+
+  publish-node-sdk:
+    name: Publish @snapsharp/sdk → npm
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/sdk/node/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install & build
+        working-directory: sdk-node
+        run: npm ci && npm run build
+
+      - name: Publish
+        working-directory: sdk-node
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ── MCP Server → npm ─────────────────────────────────────────────────────────
+
+  publish-mcp:
+    name: Publish snapsharp-mcp → npm
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/mcp/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install & build
+        working-directory: mcp
+        run: npm ci && npm run build
+
+      - name: Publish
+        working-directory: mcp
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ── n8n Node → npm ───────────────────────────────────────────────────────────
+
+  publish-n8n:
+    name: Publish n8n-nodes-snapsharp → npm
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/n8n/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install & build
+        working-directory: n8n
+        run: npm ci && npm run build
+
+      - name: Publish
+        working-directory: n8n
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ── Python SDK → PyPI ────────────────────────────────────────────────────────
+
+  publish-python:
+    name: Publish snapsharp → PyPI
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/sdk/python/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build
+        working-directory: sdk-python
+        run: python -m build
+
+      - name: Publish to PyPI
+        working-directory: sdk-python
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+
+  # ── Ruby SDK → RubyGems ──────────────────────────────────────────────────────
+
+  publish-ruby:
+    name: Publish snapsharp → RubyGems
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/sdk/ruby/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      - name: Build gem
+        working-directory: sdk-ruby
+        run: gem build snapsharp.gemspec
+
+      - name: Publish to RubyGems
+        working-directory: sdk-ruby
+        run: |
+          mkdir -p ~/.gem
+          cat > ~/.gem/credentials << EOF
+          ---
+          :rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}
+          EOF
+          chmod 0600 ~/.gem/credentials
+          gem push snapsharp-*.gem
+
+  # ── PHP SDK → Packagist (sync webhook) ──────────────────────────────────────
+
+  publish-php:
+    name: Sync snapsharp/sdk → Packagist
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/sdk/php/')
+    steps:
+      - name: Trigger Packagist sync
+        run: |
+          curl -sf -X POST \
+            "https://packagist.org/api/update-package?username=${{ secrets.PACKAGIST_USERNAME }}&apiToken=${{ secrets.PACKAGIST_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"repository": {"url": "https://github.com/bogdanov-igor/snapsharp-sdk"}}'
+          echo "Packagist sync triggered"
+
+  # ── Go SDK → pkg.go.dev (tag only, auto-indexed) ─────────────────────────────
+  #
+  # pkg.go.dev indexes Go modules automatically when a semver tag is pushed.
+  # Module path: github.com/bogdanov-igor/snapsharp-sdk/sdk-go
+  # To manually trigger indexing:
+  #   curl https://proxy.golang.org/github.com/bogdanov-igor/snapsharp-sdk/sdk-go/@v/v1.0.0.info
+
+  notify-go:
+    name: Notify pkg.go.dev proxy
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/sdk/go/')
+    steps:
+      - name: Extract version
+        id: ver
+        run: echo "version=${GITHUB_REF#refs/tags/sdk/go/}" >> $GITHUB_OUTPUT
+
+      - name: Warm Go module proxy
+        run: |
+          VERSION=${{ steps.ver.outputs.version }}
+          echo "Warming proxy for version $VERSION"
+          curl -sf "https://proxy.golang.org/github.com/bogdanov-igor/snapsharp-sdk/sdk-go/@v/${VERSION}.info" || true
+          curl -sf "https://sum.golang.org/lookup/github.com/bogdanov-igor/snapsharp-sdk/sdk-go@${VERSION}" || true
+          echo "pkg.go.dev will index within a few minutes."
+          echo "Check: https://pkg.go.dev/github.com/bogdanov-igor/snapsharp-sdk/sdk-go"
