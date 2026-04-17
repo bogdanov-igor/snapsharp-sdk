@@ -48,7 +48,7 @@ jobs:
 
       - name: Install & build
         working-directory: sdk-node
-        run: npm ci && npm run build
+        run: npm install && npm run build
 
       - name: Publish
         working-directory: sdk-node
@@ -72,7 +72,7 @@ jobs:
 
       - name: Install & build
         working-directory: mcp
-        run: npm ci && npm run build
+        run: npm install && npm run build
 
       - name: Publish
         working-directory: mcp
@@ -96,7 +96,7 @@ jobs:
 
       - name: Install & build
         working-directory: n8n
-        run: npm ci && npm run build
+        run: npm install && npm run build
 
       - name: Publish
         working-directory: n8n
