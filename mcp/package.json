@@ -1,0 +1,42 @@
+{
+  "name": "snapsharp-mcp",
+  "version": "1.0.0",
+  "description": "Official MCP server for SnapSharp Screenshot & Monitoring API",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "snapsharp-mcp": "./bin/snapsharp-mcp.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "snapsharp",
+    "screenshot",
+    "claude",
+    "cursor",
+    "windsurf"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bogdanov-igor/snapsharp-sdk"
+  },
+  "homepage": "https://snapsharp.dev",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ]
+}

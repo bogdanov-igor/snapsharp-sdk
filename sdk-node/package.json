@@ -1,0 +1,32 @@
+{
+  "name": "@snapsharp/sdk",
+  "version": "1.0.0",
+  "description": "Official Node.js SDK for SnapSharp Screenshot & OG Image API",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "keywords": ["screenshot", "api", "og-image", "html-to-image", "playwright"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bogdanov-igor/snapsharp-sdk"
+  },
+  "homepage": "https://snapsharp.dev",
+  "scripts": {
+    "build": "tsup",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

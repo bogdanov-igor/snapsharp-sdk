@@ -1,0 +1,27 @@
+{
+  "name": "snapsharp/sdk",
+  "description": "Official PHP SDK for SnapSharp Screenshot & OG Image API",
+  "version": "1.0.0",
+  "type": "library",
+  "keywords": ["screenshot", "api", "og-image", "html-to-image"],
+  "license": "MIT",
+  "homepage": "https://snapsharp.dev",
+  "require": {
+    "php": ">=8.0",
+    "ext-curl": "*",
+    "ext-json": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "SnapSharp\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "SnapSharp\\Tests\\": "tests/"
+    }
+  }
+}
